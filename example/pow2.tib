@@ -1,0 +1,5 @@
+#!/usr/bin/env tibasic
+
+For(I,0,15)
+Disp 2^I
+End

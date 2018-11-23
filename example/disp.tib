@@ -1,0 +1,4 @@
+#!/usr/bin/env tibasic
+
+~3->A
+Disp ~3^~2

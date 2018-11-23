@@ -1,0 +1,14 @@
+#!/usr/bin/env tibasic
+
+ClrHome
+Prompt A
+
+For(I,2,A^.5)
+0->B:0->J
+While B<A
+B+I->B
+J+1->J
+End
+
+If A=B:Disp I,J
+End
