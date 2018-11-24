@@ -6,5 +6,5 @@ if ! make ; then
   exit 1
 fi
 
-cp tibasic $HOME/bin
+cp tibasic usr/local/bin
 make clean
