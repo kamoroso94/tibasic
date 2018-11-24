@@ -35,6 +35,6 @@ src/lex.yy.c: src/lexer.l
 	$(LEX) -t $< > $@
 
 clean:
-	$(RM) $(PROG) $(OBJS) src/y.tab.? src/lex.yy.c
+	$(RM) $(PROG) $(OBJS) src/y.tab.? src/lex.yy.c src/y.output
 
 .PHONY: default all clean
