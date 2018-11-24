@@ -58,7 +58,7 @@ StatementList
   ;
 
 Statement
-  : /* empty */
+  : %empty
   {
     $$ = &dummy;
   }
@@ -203,7 +203,7 @@ Variable
   ;
 
 BlockBody
-  : /* empty */
+  : %empty
   {
     $$ = &dummy;
   }
