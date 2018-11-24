@@ -20,7 +20,7 @@ static int tbl_len = 0;
 
 extern void yyerror(const char *str);
 int yywrap();
-static int add_string(const char *str);
+static int add_string(char *str);
 %}
 
 %x COMMENT STRING
@@ -50,16 +50,16 @@ badReal {digit}*("."{digit}*){2,}
               return STRVAR_TK;
             }
 
-" and " { CONSUME; return AND_TK; }
-" or "  { CONSUME; return OR_TK; }
-" xor " { CONSUME; return XOR_TK; }
-"not"   { CONSUME; return NOT_TK; }
+" and "     { CONSUME; return AND_TK; }
+" or "      { CONSUME; return OR_TK; }
+" xor "     { CONSUME; return XOR_TK; }
+"not"       { CONSUME; return NOT_TK; }
 
 "->"            { CONSUME; return ASSIGN_TK; }
 ">="            { CONSUME; return GE_TK; }
 "<="            { CONSUME; return LE_TK; }
 "!="            { CONSUME; return NE_TK; }
-[-+*/~^=><(),]  { CONSUME; return *yytext; }
+[-+*\/~^=><(),] { CONSUME; return yytext[0]; }
 
 ":"       { CONSUME;   return EOL_TK; }
 {newline} { WRAP_LINE; return EOL_TK; }
@@ -69,7 +69,7 @@ badReal {digit}*("."{digit}*){2,}
 
 [A-Z]     {
             CONSUME;
-            yylval.ival = *yytext - 'A';
+            yylval.ival = yytext[0] - 'A';
             return REALVAR_TK;
           }
 
@@ -82,7 +82,7 @@ badReal {digit}*("."{digit}*){2,}
 
 .         {
             CONSUME;
-            sprintf(errmsg, "Unexpected character '%c'", *yytext);
+            sprintf(errmsg, "Unexpected character '%c'", yytext[0]);
             yyerror(errmsg);
           }
 
@@ -99,7 +99,6 @@ badReal {digit}*("."{digit}*){2,}
                       CONSUME;
                       yytext[yyleng - 1] = '\0';
                       yylval.ival = add_string(yytext + 1);
-                      temp_str = NULL;
                       BEGIN INITIAL;
                       return STR_TK;
                     }
@@ -108,14 +107,11 @@ badReal {digit}*("."{digit}*){2,}
 
 // check for unclosed string literals
 int yywrap() {
-  if(YYSTATE == STRING) {
-    free(temp_str);
-    yyerror("Unclosed string literal");
-  }
+  if(YYSTATE == STRING) yyerror("Unclosed string literal");
   return 1;
 }
 
-static int add_string(const char *str) {
+static int add_string(char *str) {
   ENTRY *found;
   ENTRY item = {
     .key = str,

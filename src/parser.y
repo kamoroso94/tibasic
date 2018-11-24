@@ -7,6 +7,7 @@
 
 extern int yyline, yycolumn;
 
+extern int yylex();
 void yyerror(const char *str);
 %}
 
@@ -333,16 +334,15 @@ Assignment
   }
   ;
 
-PromptArgs
+PromptArgList
   : PromptArg
   {
     $$ = makeTree(COMMA_OP, &dummy, $1);
   }
-  | PromptArgs ',' PromptArg
+  | PromptArgList ',' PromptArg
   {
     $$ = makeLChild($1, makeTree(COMMA_OP, &dummy, $3));
   }
-  | 
   ;
 
 PromptArg
@@ -356,12 +356,12 @@ PromptArg
   }
   ;
 
-DispArgs
+DispArgList
   : DispArg
   {
     $$ = makeTree(COMMA_OP, &dummy, $1);
   }
-  | DispArgs ',' DispArg
+  | DispArgList ',' DispArg
   {
     $$ = makeLChild($1, makeTree(COMMA_OP, &dummy, $3));
   }
