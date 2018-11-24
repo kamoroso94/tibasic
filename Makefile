@@ -2,34 +2,37 @@
 
 CC=gcc
 PROG=tibasic
-OBJS=build/main.o build/runtime.o build/y.tab.o build/ast.o build/lex.yy.o
+OBJS=$(patsubst %, build/%, main.o runtime.o y.tab.o ast.o lex.yy.o)
 
 default: all
 all: $(PROG)
 
+.INIT:
+	mkdir -p build
+
 $(PROG): $(OBJS)
 	$(CC) -o $@ $^ -lm -ll
 
-build/main.o: src/main.c src/runtime.h src/ast.h
-	$(CC) -o $@ -c src/main.c
+build/main.o: src/main.c src/ast.h src/runtime.h src/lexer.h
+	$(CC) -o $@ -c $<
 
-build/runtime.o: src/runtime.c src/ast.h src/nodes.h
-	$(CC) -o $@ -c src/runtime.c
+build/runtime.o: src/runtime.c src/runtime.h src/ast.h src/nodes.h
+	$(CC) -o $@ -c $<
 
-build/y.tab.o: src/y.tab.c src/ast.h src/nodes.h src/y.tab.h
-	$(CC) -o $@ -c src/y.tab.c
+build/y.tab.o: src/y.tab.c src/runtime.h src/ast.h src/nodes.h src/y.tab.h
+	$(CC) -o $@ -c $<
 
 src/y.tab.c: src/parser.y
-	$(YACC) -dv -o $@ src/parser.y
+	$(YACC) -dv -o $@ $<
 
-build/ast.o: src/ast.c src/ast.h
-	$(CC) -o $@ -c src/ast.c
+build/ast.o: src/ast.c src/ast.h src/nodes.h
+	$(CC) -o $@ -c $<
 
-build/lex.yy.o: src/lex.yy.c src/ast.h src/y.tab.h
-	$(CC) -o $@ -c src/lex.yy.c
+build/lex.yy.o: src/lex.yy.c src/ast.h src/y.tab.h src/lexer.h
+	$(CC) -o $@ -c $<
 
 src/lex.yy.c: src/lexer.l
-	$(LEX) -t src/lexer.l > $@
+	$(LEX) -t $< > $@
 
 clean:
 	$(RM) $(PROG) $(OBJS) src/y.tab.? src/lex.yy.c
