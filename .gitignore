@@ -1,3 +1,4 @@
+tibasic
 build/*
 ast.json
 lex.yy.c
