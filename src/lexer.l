@@ -6,6 +6,7 @@
 #include "ast.h"
 #include "y.tab.h"
 #include "lexer.h"
+#include "ti_types.h"
 
 #define CONSUME (yycolumn += yyleng)
 #define WRAP_LINE (yyline++, yycolumn = 1)
@@ -15,12 +16,12 @@ extern int yyleng;
 int yyline = 1;
 int yycolumn = 1;
 static char errmsg[25];
-char *str_tbl[TBL_SIZE];
+string_t str_tbl[TBL_SIZE];
 static int tbl_len = 0;
 
 extern void yyerror(const char *str);
 int yywrap();
-static int add_string(char *str);
+static int add_string(char *str, int len);
 %}
 
 %x COMMENT STRING
@@ -98,7 +99,7 @@ badReal {digit}*("."{digit}*){2,}
 <STRING>"\""        {
                       CONSUME;
                       yytext[yyleng - 1] = '\0';
-                      yylval.ival = add_string(yytext + 1);
+                      yylval.ival = add_string(yytext + 1, yyleng - 2);
                       BEGIN INITIAL;
                       return STR_TK;
                     }
@@ -111,7 +112,7 @@ int yywrap() {
   return 1;
 }
 
-static int add_string(char *str) {
+static int add_string(char *str, int len) {
   ENTRY *found;
   ENTRY item = {
     .key = str,
@@ -119,7 +120,7 @@ static int add_string(char *str) {
   };
 
   if((found = hsearch(item, FIND)) != NULL) {
-    return (char**)found->data - str_tbl;
+    return (string_t*)found->data - str_tbl;
   }
 
   if(tbl_len >= TBL_SIZE) {
@@ -127,7 +128,8 @@ static int add_string(char *str) {
     return -1;
   }
 
-  str_tbl[tbl_len] = strdup(str);
+  str_tbl[tbl_len].buffer = strdup(str);
+  str_tbl[tbl_len].length = len;
   item.data = (void*)(str_tbl + tbl_len);
   hsearch(item, ENTER);
   return tbl_len++;
@@ -136,8 +138,8 @@ static int add_string(char *str) {
 void free_str_tbl() {
   int i;
   for(i = 0; i < tbl_len; i++) {
-    free(str_tbl[i]);
-    str_tbl[i] = NULL;
+    free(str_tbl[i].buffer);
+    str_tbl[i].buffer = NULL;
   }
   tbl_len = 0;
 }

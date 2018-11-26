@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   result = yyparse();
   hdestroy();
   fclose(yyin);
-  
+
   // exit, no ast
   if(result) {
     free_str_tbl();
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  // get ast json file
+  // open ast json file
   if(!(json = fopen(fname, "w+"))) {
     fprintf(stderr, "Could not open file \"%s\" for output: ", fname);
     perror(NULL);
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     freeTree(program);
     exit(EXIT_FAILURE);
   }
-  
+
   // print ast
   printJSON(json, program);
   fputc('\n', json);
@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
   eval(program);
   free_str_tbl();
   freeTree(program);
+  freeRuntime();
 
   return 0;
 }

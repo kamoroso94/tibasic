@@ -4,14 +4,18 @@
 #include "runtime.h"
 #include "ast.h"
 #include "nodes.h"
+#include "lexer.h"
+#include "ti_types.h"
 
 #define INTERNAL_ERROR(S) (fatalError("Internal error: " S))
 #define RUNTIME_ERROR(S) (fatalError("Runtime error: " S))
 
 static double realvars[26];
+static string_t strvars[10];
 static double ansvar;
 ast_t *program = &dummy;
 
+void freeRuntime();
 static void fatalError(const char *str);
 static void evalStmt(ast_t *stmt);
 static void evalIf(ast_t *ifStmt);
@@ -29,15 +33,24 @@ static void evalCmd(ast_t *cmd);
 static void evalPrompt(ast_t *prompt);
 static void evalDisp(ast_t *disp);
 static double readDouble();
-static char *readString();
+static void readString(string_t *str);
 
 static int cmp(double a, double b) { return (a > b) - (a < b); }
 static int sign(double a) { return cmp(a, 0); }
 
+void freeRuntime() {
+  int i;
+  for(i = 0; i < 10; i++) {
+    free(strvars[i].buffer);
+  }
+}
+
 // exit with error
 static void fatalError(const char *str) {
   // TODO: supply (line,column)
+  free_str_tbl();
   freeTree(program);
+  freeRuntime();
   fprintf(stderr, "%s\n", str);
   exit(EXIT_FAILURE);
 }
@@ -240,10 +253,21 @@ static void evalCmd(ast_t *cmd) {
 // eval user prompt
 static void evalPrompt(ast_t *prompt) {
   ast_t *node = prompt->right;
+  ast_t *arg;
 
   while(!isDummy(node)) {
-    printf("%c=?", 'A' + node->value.ival);
-    realvars[node->value.ival] = readDouble();
+    arg = node->right;
+
+    if(arg->nodeKind == REALVAR_ND) {
+      printf("%c=?", 'A' + arg->value.ival);
+      realvars[arg->value.ival] = readDouble();
+    } else if(arg->nodeKind == STRVAR_ND) {
+      printf("Str%c=?", '0' + arg->value.ival);
+      readString(strvars + arg->value.ival);
+    } else {
+      INTERNAL_ERROR("Should not reach!");
+    }
+
     node = node->left;
   }
 }
@@ -251,9 +275,21 @@ static void evalPrompt(ast_t *prompt) {
 // eval display command
 static void evalDisp(ast_t *disp) {
   ast_t *node = disp->right;
+  ast_t *arg;
 
   while(!isDummy(node)) {
-    printf("%16.10G\n", evalExpr(node->right));
+    arg = node->right;
+
+    if(arg->opType == EXPR_OP) {
+      printf("%16.10G\n", evalExpr(arg));
+    } else if(arg->nodeKind == STR_ND) {
+      printf("%s\n", str_tbl[arg->value.ival].buffer);
+    } else if(arg->nodeKind == STRVAR_ND) {
+      printf("%s\n", strvars[arg->value.ival].buffer);
+    } else {
+      INTERNAL_ERROR("Should not reach!");
+    }
+
     node = node->left;
   }
 }
@@ -273,8 +309,18 @@ static double readDouble() {
   return d;
 }
 
-static char *readString() {
-  char *str = NULL;
+static void readString(string_t *str) {
+  char *line = NULL;
   int len = 0;
-  // TODO: implement
+  int result;
+
+  while((result = getline(&line, &len)) <= 0 || line[0] == '\n') {
+    if(result == -1) RUNTIME_ERROR("Error reading input");
+    free(line);
+    line = NULL;
+    len = 0;
+  }
+
+  str->buffer = line;
+  str->length = len;
 }

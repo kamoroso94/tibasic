@@ -6,5 +6,6 @@
 extern ast_t *program;
 
 void eval(ast_t *program);
+void freeRuntime();
 
 #endif

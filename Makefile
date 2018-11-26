@@ -13,7 +13,7 @@ $(PROG): $(OBJS)
 build/main.o: src/main.c src/ast.h src/runtime.h src/lexer.h
 	$(CC) -o $@ -c $<
 
-build/runtime.o: src/runtime.c src/runtime.h src/ast.h src/nodes.h
+build/runtime.o: src/runtime.c src/runtime.h src/ast.h src/nodes.h src/lexer.h src/ti_types.h
 	$(CC) -o $@ -c $<
 
 build/y.tab.o: src/y.tab.c src/runtime.h src/ast.h src/nodes.h src/y.tab.h
@@ -25,7 +25,7 @@ src/y.tab.c: src/parser.y
 build/ast.o: src/ast.c src/ast.h src/nodes.h
 	$(CC) -o $@ -c $<
 
-build/lex.yy.o: src/lex.yy.c src/ast.h src/y.tab.h src/lexer.h
+build/lex.yy.o: src/lex.yy.c src/ast.h src/y.tab.h src/lexer.h src/ti_types.h
 	$(CC) -o $@ -c $<
 
 src/lex.yy.c: src/lexer.l
