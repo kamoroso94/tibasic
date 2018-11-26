@@ -27,6 +27,9 @@ static void evalDisp(ast_t *disp);
 static double readDouble();
 static char *readString();
 
+static int cmp(double a, double b) { return (a > b) - (a < b); }
+static int sign(double a) { return cmp(a, 0); }
+
 // exit with runtime error
 void runtimeError(const char *str) {
   // TODO: supply (line,column)
@@ -47,7 +50,7 @@ void eval(ast_t *program) {
 // eval statement
 static void evalStmt(ast_t *stmt) {
   if(isDummy(stmt)) return;
-  
+
   switch(stmt->opType) {
     case IF_OP:
     return evalIf(stmt);
@@ -172,6 +175,8 @@ static double evalAtom(ast_t *expr) {
 
   if(expr->opType == NOT_OP) return !evalExpr(expr->left);
   if(expr->opType == ASSIGN_OP) return evalAssign(expr);
+
+  runtimeError("Compiler Error: should not reach!");
 }
 
 // eval assignment
@@ -195,16 +200,12 @@ static void evalFor(ast_t *forStmt) {
   double startVal = evalExpr(assign->right);
   double endVal = evalExpr(comma->left);
   double delta = !isDummy(comma->right) ? evalExpr(comma->right) : 1;
+  int dsign = sign(delta);
 
   if(delta == 0) runtimeError("Increment must be nonzero");
-  if(delta < 0) {
-    startVal *= -1;
-    endVal *= -1;
-    delta *= -1;
-  }
 
   *realvar = startVal;
-  while(*realvar <= endVal) {
+  while(cmp(*realvar, endVal) != dsign) {
     eval(forStmt->right);
     *realvar += delta;
   }
@@ -235,7 +236,7 @@ static void evalCmd(ast_t *cmd) {
 // eval user prompt
 static void evalPrompt(ast_t *prompt) {
   ast_t *node = prompt->right;
-  
+
   while(!isDummy(node)) {
     printf("%c=?", 'A' + node->value.ival);
     realvars[node->value.ival] = readDouble();
@@ -264,7 +265,7 @@ static double readDouble() {
   }
   result = getchar();
   if(result != EOF && result != '\n') runtimeError("Number formatted incorrectly");
-  
+
   return d;
 }
 
