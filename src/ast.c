@@ -99,7 +99,9 @@ void freeTree(ast_t *root) {
 
   if(!isLeaf(root)) {
     freeTree(root->left);
+    root->left = NULL;
     freeTree(root->right);
+    root->right = NULL;
   }
 
   free(root);
