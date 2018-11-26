@@ -113,11 +113,16 @@ void printJSON(FILE *out, ast_t *root) {
   }
 
   fprintf(out, "{\"nodeKind\":%d,\"opType\":%d,\"value\":{", root->nodeKind, root->opType);
-  if(root->nodeKind == REAL_ND) {
+  switch(root->nodeKind) {
+    case REAL_ND:
     fprintf(out, "\"dval\":%g", root->value.dval);
-  }
-  if(root->nodeKind == REALVAR_ND) {
+    break;
+
+    case REALVAR_ND:
+    case STRVAR_ND:
+    case STR_ND:
     fprintf(out, "\"ival\":%d", root->value.ival);
+    break;
   }
 
   fprintf(out, "},\"left\":");
