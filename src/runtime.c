@@ -5,10 +5,14 @@
 #include "ast.h"
 #include "nodes.h"
 
+#define INTERNAL_ERROR(S) (fatalError("Internal error: " S))
+#define RUNTIME_ERROR(S) (fatalError("Runtime error: " S))
+
 static double realvars[26];
 static double ansvar;
 ast_t *program = &dummy;
 
+static void fatalError(const char *str);
 static void evalStmt(ast_t *stmt);
 static void evalIf(ast_t *ifStmt);
 static double evalExpr(ast_t *expr);
@@ -30,11 +34,11 @@ static char *readString();
 static int cmp(double a, double b) { return (a > b) - (a < b); }
 static int sign(double a) { return cmp(a, 0); }
 
-// exit with runtime error
-void runtimeError(const char *str) {
+// exit with error
+static void fatalError(const char *str) {
   // TODO: supply (line,column)
   freeTree(program);
-  fprintf(stderr, "Runtime error: %s\n", str);
+  fprintf(stderr, "%s\n", str);
   exit(EXIT_FAILURE);
 }
 
@@ -144,7 +148,7 @@ static double evalTerm(ast_t *expr) {
 
     case DIV_OP:
     rval = evalExpr(expr->right);
-    if(rval == 0) runtimeError("Division by zero");
+    if(rval == 0) RUNTIME_ERROR("Division by zero");
     return evalExpr(expr->left) / rval;
 
     default:
@@ -159,7 +163,7 @@ static double evalFactor(ast_t *expr) {
     case POW_OP:
     lval = evalExpr(expr->left);
     rval = evalExpr(expr->right);
-    if(lval == 0 && rval == 0) runtimeError("Zero to the power of zero");
+    if(lval == 0 && rval == 0) RUNTIME_ERROR("Zero to the power of zero");
     return pow(lval, rval);
 
     default:
@@ -176,7 +180,7 @@ static double evalAtom(ast_t *expr) {
   if(expr->opType == NOT_OP) return !evalExpr(expr->left);
   if(expr->opType == ASSIGN_OP) return evalAssign(expr);
 
-  runtimeError("Compiler Error: should not reach!");
+  INTERNAL_ERROR("Should not reach!");
 }
 
 // eval assignment
@@ -202,7 +206,7 @@ static void evalFor(ast_t *forStmt) {
   double delta = !isDummy(comma->right) ? evalExpr(comma->right) : 1;
   int dsign = sign(delta);
 
-  if(delta == 0) runtimeError("Increment must be nonzero");
+  if(delta == 0) RUNTIME_ERROR("Increment must be nonzero");
 
   *realvar = startVal;
   while(cmp(*realvar, endVal) != dsign) {
@@ -260,11 +264,11 @@ static double readDouble() {
   double d;
 
   while((result = scanf("%lf", &d)) != 1) {
-    if(result == EOF) runtimeError("Error reading input");
-    if(getchar() != '\n') runtimeError("Number formatted incorrectly");
+    if(result == EOF) RUNTIME_ERROR("Error reading input");
+    if(getchar() != '\n') RUNTIME_ERROR("Number formatted incorrectly");
   }
   result = getchar();
-  if(result != EOF && result != '\n') runtimeError("Number formatted incorrectly");
+  if(result != EOF && result != '\n') RUNTIME_ERROR("Number formatted incorrectly");
 
   return d;
 }

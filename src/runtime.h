@@ -5,7 +5,6 @@
 
 extern ast_t *program;
 
-void runtimeError(const char *str);
 void eval(ast_t *program);
 
 #endif
