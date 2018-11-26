@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "runtime.h"
 #include "ast.h"
@@ -88,6 +89,9 @@ static void evalStmt(ast_t *stmt) {
 
 // eval if statement
 static void evalIf(ast_t *ifStmt) {
+  if(isDummy(ifStmt->left)) INTERNAL_ERROR("If condition missing!");
+  if(isDummy(ifStmt->right)) INTERNAL_ERROR("If branches missing!");
+
   if(evalExpr(ifStmt->left)) {
     eval(ifStmt->right->left);
   } else {
@@ -97,6 +101,8 @@ static void evalIf(ast_t *ifStmt) {
 
 // eval expression
 static double evalExpr(ast_t *expr) {
+  if(isDummy(expr)) INTERNAL_ERROR("Expression missing!");
+
   switch(expr->opType) {
     case AND_OP:
     return !!evalExpr(expr->left) & !!evalExpr(expr->right);
@@ -193,7 +199,7 @@ static double evalAtom(ast_t *expr) {
   if(expr->opType == NOT_OP) return !evalExpr(expr->left);
   if(expr->opType == ASSIGN_OP) return evalAssign(expr);
 
-  INTERNAL_ERROR("Should not reach!");
+  INTERNAL_ERROR("Bad Atom type!");
 }
 
 // eval assignment
@@ -211,13 +217,21 @@ static double evalAssign(ast_t *assign) {
 
 // eval for loop
 static void evalFor(ast_t *forStmt) {
-  ast_t *assign = forStmt->left->left;
-  ast_t *comma = forStmt->left->right;
-  double *realvar = realvars + assign->left->value.ival;
-  double startVal = evalExpr(assign->right);
-  double endVal = evalExpr(comma->left);
-  double delta = !isDummy(comma->right) ? evalExpr(comma->right) : 1;
-  int dsign = sign(delta);
+  ast_t *assign, *comma;
+  double *realvar, startVal, endVal, delta;
+  int dsign;
+
+  if(isDummy(forStmt->left)) INTERNAL_ERROR("For header missing!");
+  if(isDummy(forStmt->left->left)) INTERNAL_ERROR("For initializer missing!");
+  if(isDummy(forStmt->left->right)) INTERNAL_ERROR("For range missing!");
+
+  assign = forStmt->left->left;
+  comma = forStmt->left->right;
+  realvar = realvars + assign->left->value.ival;
+  startVal = evalExpr(assign->right);
+  endVal = evalExpr(comma->left);
+  delta = !isDummy(comma->right) ? evalExpr(comma->right) : 1;
+  dsign = sign(delta);
 
   if(delta == 0) RUNTIME_ERROR("Increment must be nonzero");
 
@@ -230,6 +244,8 @@ static void evalFor(ast_t *forStmt) {
 
 // eval while loop
 static void evalWhile(ast_t *whileStmt) {
+  if(isDummy(whileStmt->left)) INTERNAL_ERROR("While condition missing!");
+
   while(evalExpr(whileStmt->left)) {
     eval(whileStmt->right);
   }
@@ -237,6 +253,8 @@ static void evalWhile(ast_t *whileStmt) {
 
 // eval repeat loop
 static void evalRepeat(ast_t *repeatStmt) {
+  if(isDummy(repeatStmt->left)) INTERNAL_ERROR("Repeat condition missing!");
+
   do {
     eval(repeatStmt->right);
   } while(!evalExpr(repeatStmt->left));
@@ -244,10 +262,27 @@ static void evalRepeat(ast_t *repeatStmt) {
 
 // eval command
 static void evalCmd(ast_t *cmd) {
-  if(cmd->opType == ASSIGN_OP) evalAssign(cmd);
-  if(cmd->opType == PROMPT_OP) evalPrompt(cmd);
-  if(cmd->opType == DISP_OP) evalDisp(cmd);
-  if(cmd->opType == CLRHOME_OP) system("clear");
+  switch(cmd->opType) {
+    case ASSIGN_OP:
+    evalAssign(cmd);
+    break;
+
+    case PROMPT_OP:
+    evalPrompt(cmd);
+    break;
+
+    case DISP_OP:
+    evalDisp(cmd);
+    break;
+
+    case CLRHOME_OP:
+    system("clear");
+    break;
+
+    default:
+    printJSON(stdout, cmd);
+    INTERNAL_ERROR("Bad command type!");
+  }
 }
 
 // eval user prompt
@@ -255,17 +290,25 @@ static void evalPrompt(ast_t *prompt) {
   ast_t *node = prompt->right;
   ast_t *arg;
 
+  if(isDummy(node)) INTERNAL_ERROR("Prompt missing args!");
+
   while(!isDummy(node)) {
     arg = node->right;
+    if(isDummy(arg)) INTERNAL_ERROR("Prompt arg undefined!");
 
-    if(arg->nodeKind == REALVAR_ND) {
+    switch(arg->nodeKind) {
+      case REALVAR_ND:
       printf("%c=?", 'A' + arg->value.ival);
       realvars[arg->value.ival] = readDouble();
-    } else if(arg->nodeKind == STRVAR_ND) {
+      break;
+
+      case STRVAR_ND:
       printf("Str%c=?", '0' + arg->value.ival);
       readString(strvars + arg->value.ival);
-    } else {
-      INTERNAL_ERROR("Should not reach!");
+      break;
+
+      default:
+      INTERNAL_ERROR("Bad Prompt arg type!");
     }
 
     node = node->left;
@@ -274,20 +317,31 @@ static void evalPrompt(ast_t *prompt) {
 
 // eval display command
 static void evalDisp(ast_t *disp) {
+  if(isDummy(disp->right)) INTERNAL_ERROR("Disp missing args!");
   ast_t *node = disp->right;
   ast_t *arg;
 
   while(!isDummy(node)) {
     arg = node->right;
+    if(isDummy(arg)) INTERNAL_ERROR("Disp arg undefined!");
 
-    if(arg->opType == EXPR_OP) {
+    switch(arg->nodeKind) {
+      case EXPR_ND:
+      case REAL_ND:
+      case REALVAR_ND:
       printf("%16.10G\n", evalExpr(arg));
-    } else if(arg->nodeKind == STR_ND) {
+      break;
+
+      case STR_ND:
       printf("%s\n", str_tbl[arg->value.ival].buffer);
-    } else if(arg->nodeKind == STRVAR_ND) {
+      break;
+
+      case STRVAR_ND:
       printf("%s\n", strvars[arg->value.ival].buffer);
-    } else {
-      INTERNAL_ERROR("Should not reach!");
+      break;
+
+      default:
+      INTERNAL_ERROR("Bad Disp arg type!");
     }
 
     node = node->left;
@@ -303,24 +357,31 @@ static double readDouble() {
     if(result == EOF) RUNTIME_ERROR("Error reading input");
     if(getchar() != '\n') RUNTIME_ERROR("Number formatted incorrectly");
   }
+
   result = getchar();
-  if(result != EOF && result != '\n') RUNTIME_ERROR("Number formatted incorrectly");
+  if(result != EOF && result != '\n') {
+    RUNTIME_ERROR("Number formatted incorrectly");
+  }
 
   return d;
 }
 
 static void readString(string_t *str) {
   char *line = NULL;
-  int len = 0;
+  size_t len = 0;
   int result;
 
-  while((result = getline(&line, &len)) <= 0 || line[0] == '\n') {
-    if(result == -1) RUNTIME_ERROR("Error reading input");
+  while((result = getline(&line, &len, stdin)) <= 0 || len == 0 || line[0] == '\n') {
     free(line);
+    if(result == -1) RUNTIME_ERROR("Error reading input");
     line = NULL;
     len = 0;
   }
 
+  len = strnlen(line, len);
+  if(line[len - 1] == '\n') {
+    line[--len] = '\0';
+  }
   str->buffer = line;
-  str->length = len;
+  str->length = (int)len;
 }
