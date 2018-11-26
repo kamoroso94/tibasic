@@ -323,7 +323,7 @@ Command
   }
   | CLRHOME_TK
   {
-    $$ = makeLeaf(CLRHOME_OP);
+    $$ = makeTree(CLRHOME_OP, &dummy, &dummy);
   }
   ;
 
@@ -348,11 +348,11 @@ PromptArgList
 PromptArg
   : REALVAR_TK
   {
-    makeILeaf(REALVAR_ND, $1);
+    $$ = makeILeaf(REALVAR_ND, $1);
   }
   | STRVAR_TK
   {
-    makeILeaf(STRVAR_ND, $1);
+    $$ = makeILeaf(STRVAR_ND, $1);
   }
   ;
 
