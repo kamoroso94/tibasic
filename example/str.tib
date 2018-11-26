@@ -1,0 +1,22 @@
+#!/usr/bin/env tibasic
+
+Disp "What's your name?"
+Prompt Str1
+
+Disp "Hello there,",Str1,"How old are you?"
+Prompt A
+
+Disp "Ah, you are ",A,"years old!"
+
+If A<18:Then
+:If A<16:Disp "You cannot drive!"
+:Disp "You cannot vote :/"
+Else
+:If A<21:Then
+::Disp "You cannot drink :("
+:Else
+::Disp "You can do it all!"
+:End
+End
+
+Disp "Bye!"
