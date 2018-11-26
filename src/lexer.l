@@ -16,12 +16,13 @@ extern int yyleng;
 int yyline = 1;
 int yycolumn = 1;
 static char errmsg[25];
+static string_t temp_str;
 string_t str_tbl[TBL_SIZE];
 static int tbl_len = 0;
 
 extern void yyerror(const char *str);
 int yywrap();
-static int add_string(char *str, int len);
+static int add_string(string_t *str);
 %}
 
 %x COMMENT STRING
@@ -66,7 +67,12 @@ badReal {digit}*("."{digit}*){2,}
 {newline} { WRAP_LINE; return EOL_TK; }
 
 "#"       { CONSUME; BEGIN COMMENT; }
-"\""      { CONSUME; BEGIN STRING; }
+"\""      {
+            CONSUME;
+            temp_str.buffer = calloc(1, sizeof(char));
+            temp_str.length = 0;
+            BEGIN STRING;
+          }
 
 [A-Z]     {
             CONSUME;
@@ -90,16 +96,21 @@ badReal {digit}*("."{digit}*){2,}
 <COMMENT>[^\r\n]+   { CONSUME; }
 <COMMENT>{newline}  { WRAP_LINE; BEGIN INITIAL; }
 
-<STRING>[^\r\n\"]+  { CONSUME; }
+<STRING>[^\r\n\"]+  {
+                      CONSUME;
+                      free(temp_str.buffer);
+                      temp_str.buffer = strdup(yytext);
+                      temp_str.length = yyleng;
+                    }
 <STRING>{newline}   {
                       WRAP_LINE;
+                      free(temp_str.buffer);
                       yyerror("Unclosed string literal");
                       BEGIN INITIAL;
                     }
 <STRING>"\""        {
                       CONSUME;
-                      yytext[yyleng - 1] = '\0';
-                      yylval.ival = add_string(yytext + 1, yyleng - 2);
+                      yylval.ival = add_string(&temp_str);
                       BEGIN INITIAL;
                       return STR_TK;
                     }
@@ -108,18 +119,22 @@ badReal {digit}*("."{digit}*){2,}
 
 // check for unclosed string literals
 int yywrap() {
-  if(YYSTATE == STRING) yyerror("Unclosed string literal");
+  if(YYSTATE == STRING) {
+    yyerror("Unclosed string literal");
+    free(temp_str.buffer);
+  }
   return 1;
 }
 
-static int add_string(char *str, int len) {
+static int add_string(string_t *str) {
   ENTRY *found;
   ENTRY item = {
-    .key = str,
+    .key = str->buffer,
     .data = NULL
   };
 
   if((found = hsearch(item, FIND)) != NULL) {
+    free(str->buffer);
     return (string_t*)found->data - str_tbl;
   }
 
@@ -128,8 +143,8 @@ static int add_string(char *str, int len) {
     return -1;
   }
 
-  str_tbl[tbl_len].buffer = strdup(str);
-  str_tbl[tbl_len].length = len;
+  str_tbl[tbl_len].buffer = str->buffer;
+  str_tbl[tbl_len].length = str->length;
   item.data = (void*)(str_tbl + tbl_len);
   hsearch(item, ENTER);
   return tbl_len++;
