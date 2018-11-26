@@ -31,11 +31,11 @@ void yyerror(const char *str);
 %token LE_TK     "<="
 %token EOL_TK    ":"
 
-%type <tptr> StatementList Statement BlockStmt IfBlock IfHeader
-%type <tptr> Expression Comparison Sum Term Factor Atom Variable BlockBody
-%type <tptr> ForLoop ForHeader ForArgs ForArgsStart WhileLoop WhileHeader
-%type <tptr> RepeatLoop RepeatHeader LineStmt IfInline Command Assignment
-%type <tptr> PromptArgList PromptArg DispArgList DispArg
+%type <tptr> StatementList Statement BlockStmt IfBlock IfHeader Expression
+%type <tptr> Comparison Sum Term Factor Atom Variable BlockBody ForLoop
+%type <tptr> ForHeader ForArgs ForArgsStart WhileLoop WhileHeader RepeatLoop
+%type <tptr> RepeatHeader LineStmt IfInline Command Assignment PromptArgList
+%type <tptr> PromptArg DispArgList DispArg
 
 %%
 
