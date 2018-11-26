@@ -16,7 +16,6 @@ static string_t strvars[10];
 static double ansvar;
 ast_t *program = &dummy;
 
-void freeRuntime();
 static void fatalError(const char *str);
 static void evalStmt(ast_t *stmt);
 static void evalIf(ast_t *ifStmt);
