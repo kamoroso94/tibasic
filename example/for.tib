@@ -1,0 +1,25 @@
+#!/usr/bin/env tibasic
+
+For(A,1,1)
+Disp "A",A
+End
+
+For(B,1,~1)
+Disp "B",B
+End
+
+For(C,1,2)
+Disp "C",C
+End
+
+For(D,1,1,~1)
+Disp "D",D
+End
+
+For(E,1,~1,~1)
+Disp "E",E
+End
+
+For(F,1,2,~1)
+Disp "F",F
+End
