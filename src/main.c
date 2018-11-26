@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
   const char *fname = "ast.json";
 
   if(argc != 2) {
-    fprintf(stderr, "Expected 1 argument");
+    fprintf(stderr, "Expected 1 argument\n");
     exit(EXIT_FAILURE);
   }
 
