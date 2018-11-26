@@ -7,9 +7,6 @@ OBJS=$(patsubst %, build/%, main.o runtime.o y.tab.o ast.o lex.yy.o)
 default: all
 all: $(PROG)
 
-.INIT:
-	mkdir -p build
-
 $(PROG): $(OBJS)
 	$(CC) -o $@ $^ -lm -ll
 

@@ -7,13 +7,26 @@ more easily written with ASCII characters.
 ```
 $ make
 ```
+This will create the interpreter `tibasic` in the project root directory, and
+all the object files will be in the `build` directory.  To clean up, just run
+`make clean`.
+
+## How to Install
+```
+$ sudo ./install.sh
+```
+This will run `make` then move the compiled binary to `/usr/local/bin`, and
+finally call `make clean`.  If there is a compilation error, nothing should be
+copied to that directory.
 
 ## How to Run
 With the interpreter:
 ```
-$ ./tibasic source_file
+$ tibasic source_file
 ```
 - `source_file`: Source file name
+
+Without the interpreter: Include the [shebang](#shebangs) in the `source_file`.
 
 ## Implementation
 The language currently only supports a limited subset of the original TI-BASIC
@@ -24,7 +37,7 @@ variables, `not` function, and real numbers.
 ### Features
 This implementation supports single line comments that begin with a `#`.  Note
 that the line delimiter `':'` will not end the comment, only a newline character
-`'\n'` will.  A consequence of this is that shebangs can be supported.  The 
+`'\n'` will.  A consequence of this is that shebangs can be supported.  The
 following is an example of a comment.
 ```
 #This is a comment
@@ -34,7 +47,7 @@ following is an example of a comment.
 A shebang is a special comment on the first line of a program that tells the shell
 what interpreter to use to run the program.  It looks like the following:
 ```
-#/usr/bin/env tibasic
+#!/usr/bin/env tibasic
 ```
 The first part `#` denotes a comment, but paired with a `!` denotes a shebang.
 The following is a full path to the interpreter with optional arguments to be
