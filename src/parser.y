@@ -62,10 +62,7 @@ StatementList
   ;
 
 Statement
-  : %empty
-  {
-    $$ = &dummy;
-  }
+  : %empty { $$ = &dummy; }
   | BlockStmt
   | LineStmt
   ;
