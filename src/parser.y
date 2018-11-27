@@ -17,7 +17,7 @@ void yyerror(const char *str);
   int ival;
   double dval;
   ast_t *tptr;
-};
+}
 
 %token IF_TK THEN_TK ELSE_TK FOR_TK WHILE_TK REPEAT_TK END_TK PROMPT_TK DISP_TK
 %token CLRHOME_TK AND_TK OR_TK XOR_TK NOT_TK ANS_TK
@@ -36,6 +36,10 @@ void yyerror(const char *str);
 %type <tptr> ForHeader ForArgs ForArgsStart WhileLoop WhileHeader RepeatLoop
 %type <tptr> RepeatHeader LineStmt IfInline Command Assignment PromptArgList
 %type <tptr> PromptArg DispArgList DispArg
+
+%destructor {
+  if($$ != program) freeTree($$);
+} <tptr>
 
 %%
 
