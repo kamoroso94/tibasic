@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <math.h>
 #include "runtime.h"
 #include "ast.h"
@@ -176,13 +177,16 @@ static double evalTerm(ast_t *expr) {
 
 // eval factor of term
 static double evalFactor(ast_t *expr) {
-  double lval, rval;
+  double lval, rval, result;
   switch(expr->opType) {
     case POW_OP:
     lval = evalExpr(expr->left);
     rval = evalExpr(expr->right);
     if(lval == 0 && rval == 0) RUNTIME_ERROR("Zero to the power of zero");
-    return pow(lval, rval);
+    errno = 0;
+    result = pow(lval, rval);
+    if(errno) RUNTIME_ERROR("Domain error");
+    return result;
 
     default:
     return evalAtom(expr);
